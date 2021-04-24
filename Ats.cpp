@@ -18,7 +18,11 @@ ATS_API void WINAPI Initialize(int brake) {
 }
 ATS_API ATS_HANDLES WINAPI Elapse(
 		ATS_VEHICLESTATE vs, int *p, int *s) {
-	return m_ats.run(p, s, status, vs);
+	if (ats_p.enable()) {
+		return ats_p.run(p, s, status, vs);
+	} else {
+		return m_ats.run(p, s, status, vs);
+	}
 }
 
 ATS_API void WINAPI SetPower(int n) { status.Power = n; }
