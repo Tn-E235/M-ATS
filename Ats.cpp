@@ -15,10 +15,11 @@ ATS_API void WINAPI SetVehicleSpec(ATS_VEHICLESPEC s) {
 }
 ATS_API void WINAPI Initialize(int brake) {
 	m_ats.initialize(spec);
+	ats_p.initialize(spec);
 }
 ATS_API ATS_HANDLES WINAPI Elapse(
 		ATS_VEHICLESTATE vs, int *p, int *s) {
-	if (ats_p.enable()) {
+	if (ats_p.isEnable()) {
 		return ats_p.run(p, s, status, vs);
 	} else {
 		return m_ats.run(p, s, status, vs);
@@ -39,7 +40,7 @@ ATS_API void WINAPI DoorClose() { status.Pilotlamp = true; }
 ATS_API void WINAPI SetSignal(int s) { status.Signal = s; }
 ATS_API void WINAPI SetBeaconData(ATS_BEACONDATA beacon) {
 	m_ats.beacon(beacon);
-	// ats_p.beacon(beacon);
+	ats_p.beacon(beacon);
 }
 ATS_API void WINAPI Load() {}
 ATS_API void WINAPI Dispose() {}
