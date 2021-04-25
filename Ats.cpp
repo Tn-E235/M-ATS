@@ -19,8 +19,9 @@ ATS_API void WINAPI Initialize(int brake) {
 }
 ATS_API ATS_HANDLES WINAPI Elapse(
 		ATS_VEHICLESTATE vs, int *p, int *s) {
+	ats_p.setData(status, vs);
 	if (ats_p.isEnable()) {
-		return ats_p.run(p, s, status, vs);
+		return ats_p.run(p, s);
 	} else {
 		return m_ats.run(p, s, status, vs);
 	}
@@ -37,7 +38,10 @@ ATS_API void WINAPI KeyUp(int key) {}
 ATS_API void WINAPI HornBlow(int h) {}
 ATS_API void WINAPI DoorOpen() { status.Pilotlamp = false; }
 ATS_API void WINAPI DoorClose() { status.Pilotlamp = true; }
-ATS_API void WINAPI SetSignal(int s) { status.Signal = s; }
+ATS_API void WINAPI SetSignal(int s) { 
+	ats_p.setSignal(s);
+	// status.Signal = s; 
+}
 ATS_API void WINAPI SetBeaconData(ATS_BEACONDATA beacon) {
 	m_ats.beacon(beacon);
 	ats_p.beacon(beacon);
