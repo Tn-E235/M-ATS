@@ -14,11 +14,10 @@ void ATS_P::initialize(ATS_VEHICLESPEC s) {
 	trainDistance = LENGTH * s.Cars;
 	limitPos_E = INT_MAX;
 	spec = s;
+	receiveSignalIndex = SIG_0;
 }
 
-ATS_HANDLES ATS_P::run(
-		int* panel, int* sound,
-		TRAIN_STATUS status, ATS_VEHICLESTATE vs) {
+ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 
 	ATS_HANDLES output{};
 	output.Brake = status.Brake;
@@ -27,10 +26,15 @@ ATS_HANDLES ATS_P::run(
 	output.Reverser = status.Reverser;
 	const double speed = vs.Speed;
 	const double location = vs.Location;
-	const int currentSignalIndex = status.Signal;
+	const int currentLimitSpeed = limitSpeed;
+	const int currentSignalSpeed = getSignalSpeed(currentSignalIndex);
+	const int nextSignalSpeed = getSignalSpeed(nextSignalIndex);
+	// ------------------------------------------------------------------------
+	sound[200] = ATS_SOUND_CONTINUE;
 	// ------------------------------------------------------------------------
 	bool atspBrake_l = false;
-	panel[255] = limitSpeed;
+	bool atspPattern_l = false;
+	double lp = limitSpeed;
 	if (limitCtl) {
 		if (limitPos_E <= location) {
 			// 速度制限解除
@@ -42,89 +46,112 @@ ATS_HANDLES ATS_P::run(
 			if (speed > limitSpeed) atspBrake_l = true;
 		} else {
 			// 速度制限手前まで
-			if (speed > getPattern(limitPos_S-location)) 
-				atspBrake_l = true;
-			panel[254] = getPattern(limitPos_S - location);
+			const double remDis = limitPos_S - location;
+			lp = getPattern(limitPos_S - location, limitSpeed);
+			if (speed > lp) atspBrake_l = true;
+			atspPattern_l = isPatternAP(speed, remDis, limitSpeed);
 		}
 	}
 	// ------------------------------------------------------------------------
-	//bool atspBrake_s = false;
-
-	//// 信号手前まで
-	//if (signalPos > location) {
-	//	int signalLimit = 0;
-	//	switch (nextSignalIndex) {
-	//		case SIG_0:
-	//			signalLimit = SIG_R;
-	//			break;
-	//		case SIG_1:
-	//			signalLimit = SIG_YY;
-	//			break;
-	//		case SIG_2:
-	//			signalLimit = SIG_Y;
-	//			break;
-	//		case SIG_3:
-	//			signalLimit = SIG_YG;
-	//			break;
-	//		default:
-	//			signalLimit = MAX_SPEED;
-	//			break;
-	//	}
-	//	const double pattern =
-	//		getBrakePattern(signalLimit, speed, location);
-	//	double remDis = limitPos_S - location;
-	//	if (pattern > remDis) atspBrake_s = true;
-	//}
-	//if (speed > getSignalSpeed(currentSignalIndex)) {
-	//	atspBrake_s = true;
-	//}
+	bool atspBrake_s = false;
+	bool atspPattern_s = false;
+	double sp = getSignalSpeed(currentSignalIndex);
+	// 信号手前まで
+	if (signalPos >= location) {
+		// MessageBox(NULL, TEXT("Kitty on your lap"),TEXT("メッセージボックス"), MB_OK);
+		const int nextSignalSpeed = getSignalSpeed(nextSignalIndex);
+		const double remDis = signalPos - location;
+		sp = getPattern(remDis, nextSignalSpeed);
+		atspPattern_s = isPatternAP(speed, remDis, nextSignalSpeed);
+	}
+	if (speed > sp) atspBrake_s = true;
 	// ------------------------------------------------------------------------
-	if (atspBrake_l) atspBrake = true;
-	if (atspBrake) {
-		if (speed <= limitSpeed - RELEASE_BRAKE_SPEED) {
-			output.Brake = status.Brake;
-			output.Power = status.Power;
-			atspBrake = false;
-		} else {
+	bool atspBrake = false;
+	if (atspBrake_l || atspBrake_s) {
+		atspBrake = true;
+		if (speed >= min(lp, sp) - RELEASE_BRAKE_SPEED) {
 			output.Power = 0;
 			output.Brake = status.svcBrake;
 		}
+	} else {
+		output.Brake = status.Brake;
+		output.Power = status.Power;
 	}
 	// ------------------------------------------------------------------------
-	v = vs;
+	// ホームドア
+	panel[243] = 0;
+	// ホームドア故障？
+	panel[244] = 0;
+	// ATS-P
+	const int atspEnableNum = (atspEnable) ? 1 : 0;
+	if (panel[245] != atspEnableNum) {
+		panel[245] = atspEnableNum;
+		sound[200] = ATS_SOUND_PLAY;
+	}
+	// 故障
+	panel[248] = 0;
+	// P電源
+	panel[249] = 1;
+	// 開放
+	panel[250] = 0;
+	// 制限速度・信号現示パターン
+	panel[254] = min(lp, sp);		// G
+	// 制限速度・信号現示
+	panel[255] = min(limitSpeed,currentSignalSpeed);	// R
+	// パターン接近
+	const int patternAP = (atspPattern_l || atspPattern_s) ? 1 : 0;
+	if (panel[246] != patternAP) {
+		panel[246] = patternAP;
+		sound[200] = ATS_SOUND_PLAY;
+	}
+	// ブレーキ動作
+	if (panel[247] != (atspBrake) ? 1 : 0) {
+		panel[247] = atspBrake;
+		sound[200] = ATS_SOUND_PLAY;
+	}
+
 	return output;
 }
 
 void ATS_P::beacon(ATS_BEACONDATA beacon) {
-	const int type     = beacon.Type;
+	const int type = beacon.Type;
 	const int sendData = beacon.Optional;
-	const int signal   = beacon.Signal;
+	const int signal = beacon.Signal;
 	const int distance = beacon.Distance;
+	const int location = vs.Location;
+	int dis;
+	int lim;
 	switch (type) {
-		int dis;
-		int lim;
 		case ATSP_ENABLE:
-			if (sendData == 0) atspEnable = false; 
-			else if (sendData == 1) atspEnable = true;
+			if (sendData == 0) {
+				atspEnable = false;
+			} else if (sendData == 1) {
+				atspEnable = true;
+				signalPos = distance + location;
+				nextSignalIndex = signal;
+				currentSignalIndex = signal;
+				receiveSignalIndex = signal + 1;
+			}
 			break;
-		case ATSP_SIGNAL_S:
-			dis = sendData % 1000;
-			signalPos = v.Location + dis;
-			signalCtl = true;
+		case ATSP_SIGNAL_L:
+			signalPos = distance + location;
 			nextSignalIndex = signal;
+			currentSignalIndex = receiveSignalIndex;
 			break;
 		case ATSP_SIGNAL_U:
+			signalPos = distance + location;
 			nextSignalIndex = signal;
+			currentSignalIndex = receiveSignalIndex;
 			break;
 		case ATSP_LIMIT_S:
 			dis = sendData / 1000;
 			lim = sendData % 1000;
 			limitCtl = true;
 			limitSpeed = lim;
-			limitPos_S = v.Location + dis;
+			limitPos_S = location + dis;
 			break;
 		case ATSP_LIMIT_E:
-			limitPos_E = v.Location + trainDistance;
+			limitPos_E = location + trainDistance;
 			break;
 	}
 }
@@ -132,10 +159,17 @@ void ATS_P::beacon(ATS_BEACONDATA beacon) {
 bool ATS_P::isEnable() { return atspEnable; }
 
 double ATS_P::getRemDistance(
-			int limit, double speed, double location) {
+	int limit, double speed, double location) {
 	const double decelerate = 3.0;
 	return (speed * speed - limit * limit) / 7.2 / decelerate;
 }
+
+void ATS_P::setData(TRAIN_STATUS s, ATS_VEHICLESTATE v) {
+	status = s;
+	vs = v;
+}
+
+void atsp::ATS_P::setSignal(int s) { receiveSignalIndex = s; }
 
 int ATS_P::getSignalSpeed(int sig) {
 	switch (sig) {
@@ -153,8 +187,13 @@ int ATS_P::getSignalSpeed(int sig) {
 	return MAX_SPEED;
 }
 
-double ATS_P::getPattern(double remDis) {
-	double d = (limitSpeed * limitSpeed) / (7.2 * decelerate);
+double ATS_P::getPattern(double remDis, int lim) {
+	double d = (lim * lim) / (7.2 * decelerate);
 	double s = sqrt(7.2 * decelerate * (d + remDis));
 	return (s > MAX_SPEED) ? MAX_SPEED : s;
+}
+
+bool ATS_P::isPatternAP(double speed, double remDis, int lim) {
+	double postion = speed / 3600.0 * 2.5 * 1000;
+	return (getPattern(remDis - postion, lim) <= speed) ? true : false;
 }

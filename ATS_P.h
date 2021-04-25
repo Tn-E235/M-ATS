@@ -4,7 +4,7 @@
 #define STOP_SPEED 5
 #define ATSP_TYPE       3
 #define ATSP_ENABLE   120
-#define ATSP_SIGNAL_S 121
+#define ATSP_SIGNAL_L 121
 #define ATSP_SIGNAL_U 122
 #define ATSP_LIMIT_S  123
 #define ATSP_LIMIT_E  124
@@ -24,26 +24,20 @@ namespace atsp {
 
 	class ATS_P {
 		public:
-			ATS_HANDLES run(
-				int*, int*, TRAIN_STATUS,
-				ATS_VEHICLESTATE);
+			ATS_HANDLES run(int*, int*);
 			void initialize(ATS_VEHICLESPEC);
 			void beacon(ATS_BEACONDATA);
 			void keuUp(int);
 			void keyDown(int);
 			bool isEnable();
-			bool isBrakePatternApproach(int, double, int);
+			bool isPatternAP(double, double, int);
 			double getRemDistance(int, double, double);
-			void signal(int);
+			void setData(TRAIN_STATUS, ATS_VEHICLESTATE);
+			void setSignal(int);
+
 		private:
-			void makePattern();
-			bool isBack();
-			bool isStop();
-			bool isMaxSpeed();
-			bool releaseBrake();
 			int getSignalSpeed(int);
-			double getPattern(double);
-			double getRemDistance(double);
+			double getPattern(double, int);
 			bool atspEnable;
 			bool atspBrake;
 			double decelerate;
@@ -53,13 +47,16 @@ namespace atsp {
 			int limitSpeed;
 			int signalPos;
 			int nextSignalIndex;
+			int currentSignalIndex;
 			int SignalSpeed;
 			bool limitCtl;
 			bool signalCtl;
 			double location;
 			int trainDistance;
-			ATS_VEHICLESTATE v;
+			int receiveSignalIndex;
+			ATS_VEHICLESTATE vs;
 			ATS_VEHICLESPEC spec;
+			TRAIN_STATUS status;
 	};
 
 }
