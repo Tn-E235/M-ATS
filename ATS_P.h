@@ -19,8 +19,41 @@
 #define SIG_3    3
 #define SIG_4    4
 #define LENGTH  19
+#include <vector>
 
 namespace atsp {
+	class ATSP_BEACON_L {
+		public:
+			ATSP_BEACON_L();
+			ATSP_BEACON_L(double, double, int);
+			double getPutLocation();
+			double getStartLocation();
+			double getEndLocation();
+			bool isUpdated();
+			int getSpeedLimit();
+			void setStartLocation(double);
+			void setEndLocation(double);
+			void update();
+		private:
+			double putLocation;
+			double startLocation;
+			int speedLimit;
+			double endLocation;
+			bool updated;
+	};
+
+	class ATSP_INFO {
+		public:
+			ATSP_INFO();
+			void updateSignal();
+			int signalIndex;
+			int nextSignalIndex;
+			int receiveSignalIndex;
+			int speedLimit;
+			int signalPos;
+			double pattern;
+		private:
+	};
 
 	class ATS_P {
 		public:
@@ -41,22 +74,14 @@ namespace atsp {
 			bool atspEnable;
 			bool atspBrake;
 			double decelerate;
-			int limitPos_S;
-			int limitPos_E;
-			
-			int limitSpeed;
-			int signalPos;
-			int nextSignalIndex;
-			int currentSignalIndex;
-			int SignalSpeed;
-			bool limitCtl;
-			bool signalCtl;
-			double location;
 			int trainDistance;
-			int receiveSignalIndex;
+
 			ATS_VEHICLESTATE vs;
 			ATS_VEHICLESPEC spec;
 			TRAIN_STATUS status;
+			std::vector<ATSP_BEACON_L> atsp_beacon_l;
+			ATSP_INFO info;
+			void sortATSP_BEACON_L();
 	};
 
 }
