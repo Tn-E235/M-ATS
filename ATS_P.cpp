@@ -23,9 +23,7 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	output.Reverser = status.Reverser;
 	const double speed = vs.Speed;
 	const double location = vs.Location;
-	const int currentSignalIndex = info.signalIndex;
-	// ------------------------------------------------------------------------
-	sound[200] = ATS_SOUND_CONTINUE;
+	sound[210] = ATS_SOUND_CONTINUE;
 	// ------------------------------------------------------------------------
 	// 速度制限制御
 	double lp = info.speedLimit;
@@ -41,20 +39,20 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 			const double endLocation = b.getEndLocation();
 			if (endLocation > 0 && endLocation <= location) {
 				atsp_beacon_l.erase(atsp_beacon_l.begin());
-				// MessageBox(NULL, TEXT("Kitty on your lap"), TEXT("メッセージボックス"), MB_OK);
 				continue;
 			}
 			double p = 0.0;
+			const int lim = b.getSpeedLimit();
 			if (startLocation <= location
 				&& (endLocation > location || endLocation < 0)) {
 				// 制限速度区間内のとき
-				p = b.getSpeedLimit();
-				info.speedLimit = p;
+				p = lim;
+				info.speedLimit = lim;
 			} else {
 				// 制限速度区間までのパターン生成
 				const double remDis = startLocation - location;
-				p = getPattern(remDis, b.getSpeedLimit());
-				atspPattern_l = isPatternAP(speed, remDis, info.speedLimit);
+				p = getPattern(remDis, lim);
+				if (isPatternAP(speed, remDis, lim)) atspPattern_l = true;
 			}
 			if (p < pt_l) pt_l = p;
 		}
@@ -67,6 +65,7 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	// 信号制御
 	bool atspBrake_s = false;
 	bool atspPattern_s = false;
+	const int currentSignalIndex = info.signalIndex;
 	double sp = getSignalSpeed(currentSignalIndex);
 	// 信号手前まで
 	if (info.signalPos >= location) {
@@ -99,7 +98,7 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	const int atspEnableNum = (atspEnable) ? 1 : 0;
 	if (panel[245] != atspEnableNum) {
 		panel[245] = atspEnableNum;
-		sound[200] = ATS_SOUND_PLAY;
+		sound[210] = ATS_SOUND_PLAY;
 	}
 	// 故障
 	panel[248] = 0;
@@ -110,18 +109,17 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	// 制限速度・信号現示パターン
 	panel[254] = (int)min(lp, sp);		// G
 	// 制限速度・信号現示
-	const int currentSignalSpeed = getSignalSpeed(currentSignalIndex);
-	panel[255] = (int)min(info.speedLimit, currentSignalSpeed);	// R
+	panel[255] = (int)min(info.speedLimit, sp);	// R
 	// パターン接近
 	const int patternAP = (atspPattern_l || atspPattern_s) ? 1 : 0;
 	if (panel[246] != patternAP) {
 		panel[246] = patternAP;
-		sound[200] = ATS_SOUND_PLAY;
+		sound[210] = ATS_SOUND_PLAY;
 	}
 	// ブレーキ動作
 	if (panel[247] != ((atspBrake) ? 1 : 0)) {
 		panel[247] = atspBrake;
-		sound[200] = ATS_SOUND_PLAY;
+		sound[210] = ATS_SOUND_PLAY;
 	}
 
 	return output;
