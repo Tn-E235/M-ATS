@@ -1,5 +1,11 @@
 ATS_HANDLES g_output;
 TRAIN_STATUS status;
 ATS_VEHICLESPEC spec;
+readIni ini;
 mats::M_ATS m_ats;
 atsp::ATS_P ats_p;
+void settingM(HANDLE, ATSP_PANEL, ATSP_SOUND, ATSP_KEY);
+void settingP(HANDLE, ATSP_PANEL, ATSP_SOUND, ATSP_KEY);
+bool loadIni = false;
+bool ATSP = false;
+int ATSP_P = -1;

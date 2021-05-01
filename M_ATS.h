@@ -20,15 +20,20 @@ namespace mats {
 			void beacon(ATS_BEACONDATA);
 			void keuUp(int);
 			void keyDown(int);
-
+			void setting(M_ATS_PANEL, M_ATS_SOUND, M_ATS_KEY);
+			
 		private:
 			bool isEB;
 			bool signalCheck;
 			int signalCheckIndex;
 			bool limitCheck;
 			int limitSpeed;
+			bool loadIni = false;
 			TRAIN_STATUS status;
 			ATS_VEHICLESPEC spec;
+			M_ATS_PANEL m_panel;
+			M_ATS_SOUND m_sound;
+			M_ATS_KEY m_key;
 	};
 
 }

@@ -22,6 +22,7 @@
 #include <vector>
 
 namespace atsp {
+
 	class ATSP_BEACON_L {
 		public:
 			ATSP_BEACON_L();
@@ -34,6 +35,7 @@ namespace atsp {
 			void setStartLocation(double);
 			void setEndLocation(double);
 			void update();
+
 		private:
 			double putLocation;
 			double startLocation;
@@ -67,6 +69,7 @@ namespace atsp {
 			double getRemDistance(int, double, double);
 			void setData(TRAIN_STATUS, ATS_VEHICLESTATE);
 			void setSignal(int);
+			void setting(ATSP_PANEL, ATSP_SOUND, ATSP_KEY);
 
 		private:
 			int getSignalSpeed(int);
@@ -75,13 +78,16 @@ namespace atsp {
 			bool atspBrake;
 			double decelerate;
 			int trainDistance;
-
+			bool loadIni = false;
 			ATS_VEHICLESTATE vs;
 			ATS_VEHICLESPEC spec;
 			TRAIN_STATUS status;
 			std::vector<ATSP_BEACON_L> atsp_beacon_l;
 			ATSP_INFO info;
 			void sortATSP_BEACON_L();
+			ATSP_PANEL p_panel;
+			ATSP_SOUND p_sound;
+			ATSP_KEY p_key;
 	};
 
 }

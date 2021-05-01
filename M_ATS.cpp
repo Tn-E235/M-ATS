@@ -5,7 +5,7 @@
 
 using namespace mats;
 
-void mats::M_ATS::initialize(ATS_VEHICLESPEC s) {
+void M_ATS::initialize(ATS_VEHICLESPEC s) {
 	limitCheck = false;
 	signalCheck = false;
 	spec = s;
@@ -58,7 +58,7 @@ ATS_HANDLES M_ATS::run(
 	return output;
 }
 
-void mats::M_ATS::keyDown(int key) {
+void M_ATS::keyDown(int key) {
 	// ATS•œ‹A
 	if (key == ATS_KEY_B1) {
 		if (status.Reverser == 0 && status.Power == 0
@@ -68,7 +68,7 @@ void mats::M_ATS::keyDown(int key) {
 	}
 }
 
-void mats::M_ATS::beacon(ATS_BEACONDATA beacon) {
+void M_ATS::beacon(ATS_BEACONDATA beacon) {
 	const int type = beacon.Type;
 	const int sendData = beacon.Optional;
 	const int signal = beacon.Signal;
@@ -96,3 +96,8 @@ void mats::M_ATS::beacon(ATS_BEACONDATA beacon) {
 	}
 }
 
+void M_ATS::setting(M_ATS_PANEL p, M_ATS_SOUND s, M_ATS_KEY k) {
+	m_panel = p;
+	m_sound = s;
+	m_key = k;
+}

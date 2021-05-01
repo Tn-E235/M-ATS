@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "atsplugin.h"
 #include "data.h"
+//#include "ini.h"
 #include "ATS_P.h"
-#include <climits>
 #include <vector>
 using namespace atsp;
 
@@ -23,7 +23,8 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	output.Reverser = status.Reverser;
 	const double speed = vs.Speed;
 	const double location = vs.Location;
-	sound[210] = ATS_SOUND_CONTINUE;
+	if (p_sound.bell != -1)
+		sound[p_sound.bell] = ATS_SOUND_CONTINUE;
 	// ------------------------------------------------------------------------
 	// 速度制限制御
 	double lp = info.speedLimit;
@@ -91,35 +92,52 @@ ATS_HANDLES ATS_P::run(int* panel, int* sound) {
 	}
 	// ------------------------------------------------------------------------
 	// ホームドア
-	panel[243] = 0;
+	int p_num = p_panel.platformDoor;
+	if (p_num != -1) panel[p_num] = 0;
 	// ホームドア故障？
-	panel[244] = 0;
+	p_num = p_panel.platformDoor_break;
+	if (p_num != -1) panel[p_num] = 0;
 	// ATS-P
-	const int atspEnableNum = (atspEnable) ? 1 : 0;
-	if (panel[245] != atspEnableNum) {
-		panel[245] = atspEnableNum;
-		sound[210] = ATS_SOUND_PLAY;
+	p_num = p_panel.atsp_enable;
+	if (p_num != -1) {
+		const int atspEnableNum = (atspEnable) ? 1 : 0;
+		if (panel[p_num] != atspEnableNum) {
+			panel[p_num] = atspEnableNum;
+			if (p_sound.bell != -1)
+				sound[p_sound.bell] = ATS_SOUND_PLAY;
+		}
 	}
 	// 故障
-	panel[248] = 0;
+	p_num = p_panel.atsp_break;
+	if (p_num != -1) panel[p_num] = 0;
 	// P電源
-	panel[249] = 1;
+	// p_num = p_panel.atsp_power;
+	// if (p_num != -1) panel[p_num] = 1;
 	// 開放
-	panel[250] = 0;
+	p_num = p_panel.atsp_release;
+	if (p_num != -1) panel[p_num] = 0;
 	// 制限速度・信号現示パターン
 	panel[254] = (int)min(lp, sp);		// G
 	// 制限速度・信号現示
 	panel[255] = (int)min(info.speedLimit, sp);	// R
 	// パターン接近
-	const int patternAP = (atspPattern_l || atspPattern_s) ? 1 : 0;
-	if (panel[246] != patternAP) {
-		panel[246] = patternAP;
-		sound[210] = ATS_SOUND_PLAY;
+	p_num = p_panel.atsp_pattern;
+	if (p_num != -1) {
+		const int patternAP = (atspPattern_l || atspPattern_s) ? 1 : 0;
+		if (panel[p_num] != patternAP) {
+			panel[p_num] = patternAP;
+			if (p_sound.bell != -1)
+				sound[p_sound.bell] = ATS_SOUND_PLAY;
+		}
 	}
 	// ブレーキ動作
-	if (panel[247] != ((atspBrake) ? 1 : 0)) {
-		panel[247] = atspBrake;
-		sound[210] = ATS_SOUND_PLAY;
+	p_num = p_panel.atsp_brake;
+	if (p_num != -1){
+		if (panel[p_num] != ((atspBrake) ? 1 : 0)) {
+			panel[p_num] = atspBrake;
+			if (p_sound.bell != -1)
+				sound[p_sound.bell] = ATS_SOUND_PLAY;
+		}
 	}
 
 	return output;
@@ -269,6 +287,11 @@ bool ATS_P::isPatternAP(double speed, double remDis, int lim) {
 	return (getPattern(remDis - postion, lim) <= speed) ? true : false;
 }
 
+void ATS_P::setting(ATSP_PANEL p, ATSP_SOUND s, ATSP_KEY k) {
+	p_panel = p;
+	p_sound = s;
+	p_key = k;
+}
 // ----------------------------------------------------------------------------
 ATSP_BEACON_L::ATSP_BEACON_L() {
 	putLocation   = -1;

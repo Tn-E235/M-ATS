@@ -171,6 +171,7 @@
     <ClInclude Include="atsplugin.h" />
     <ClInclude Include="ATS_P.h" />
     <ClInclude Include="data.h" />
+    <ClInclude Include="ini.h" />
     <ClInclude Include="M_ATS.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
